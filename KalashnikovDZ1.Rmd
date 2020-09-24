@@ -1,0 +1,227 @@
+---
+title: "DATASET"
+author: "Stepan"
+date: "20 09 2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+# Download data
+````{r warning: FALSE}
+#Set Working Directory
+setwd('C:/Users/Stepan/Desktop/6 курс/Машинное обучение')
+#OR Choose your Directory in 'Files' and click on 'More' -> 'Set as Working Directory' 
+#Download file to the table. Source file is 'flats.csv'
+f <- read.csv2('DATASET.csv', header = TRUE, encoding = 'UNICOD')
+#Connect library
+library (dplyr)
+#Have a look at the data
+glimpse(f)  
+head(f)
+```
+# Висновок: Кількість спостережень - 17170, число змінних - 31
+
+# Visualising
+## Histogram
+```{r}
+library(ggplot2)
+par(mfrow = c(1, 2))
+hist(f$LOAN_AMOUNT, col = 'dark blue', main = 'LOAN_AMOUNT', xlab = 'Value')
+hist(f$CLIENT_COUNTDEPENDENTS, col = 'dark green', main = 'CLIENT_COUNTDEPENDENTS', xlab = 'Value')
+hist(f$CLIENT_TOTALEXPERIENCE, col = 'dark red', main = 'CLIENT_TOTALEXPERIENCE', xlab = 'Value')
+hist(f$CLIENT_LASTEXPERIENCE, col = 'yellow', main = 'CLIENT_LASTEXPERIENCE', xlab = 'Value')
+hist(f$CLIENT_TOGETHER_INCOME, col = 'brown', main = 'CLIENT_TOGETHER_INCOME', xlab = 'Value')
+hist(f$LOAN_OUTSTANDINGLOANSCOUNT, col = 'dark orange', main = 'LOAN_OUTSTANDINGLOANSCOUNT', xlab = 'Value')
+hist(f$LOAN_TERM, col = 'pink', main = 'LOAN_TERM', xlab = 'Value')
+hist(f$AGE, col = 'gray', main = 'AGE', xlab = 'Value')
+hist(f$PERCENT_IN_THE_LOAN_AMOUNT, col = 'dark green', main = 'PERCENT_IN_THE_LOAN_AMOUNT', xlab = 'Value')
+```
+# Висновок: розподіл змінної LOAN_AMOUNT та PERCENT_IN_THE_LOAN_AMOUNT мають довгий хвіст.
+# Розподіл змінної AGE має рівномірний розподіл.
+# Розподіл змінної LOAN-TERM має нетиповий вигляд, з огляду на те що договора кредитування мають стандартні терміни повернення коштів.
+## Box-plot
+```{r}
+par(mfrow = c(1, 3))
+boxplot(f$LOAN_AMOUNT)
+boxplot(f$CLIENT_COUNTDEPENDENTS)
+boxplot(f$CLIENT_TOTALEXPERIENCE)
+boxplot(f$CLIENT_LASTEXPERIENCE)
+boxplot(f$CLIENT_TOGETHER_INCOME)
+boxplot(f$LOAN_OUTSTANDINGLOANSCOUNT)
+boxplot(f$LOAN_TERM)
+boxplot(f$AGE)
+boxplot(f$PERCENT_IN_THE_LOAN_AMOUNT)
+#qplot(data = f, 
+      #x = condition, 
+     # y = price, 
+      #geom = "boxplot")
+```
+#Висновок: всі змінні m2 та price мають викиди.
+## Violin
+```{r}
+qplot(data = f, 
+      x = DELAY, 
+      y = LOAN_AMOUNT, 
+      geom = "violin")
+qplot(data = f, 
+      x = DELAY, 
+      y = CLIENT_COUNTDEPENDENTS, 
+      geom = "violin")
+qplot(data = f, 
+      x = DELAY, 
+      y = CLIENT_TOTALEXPERIENCE, 
+      geom = "violin")
+qplot(data = f, 
+      x = DELAY, 
+      y = CLIENT_LASTEXPERIENCE, 
+      geom = "violin")
+qplot(data = f, 
+      x = DELAY, 
+      y = CLIENT_TOGETHER_INCOME, 
+      geom = "violin")
+qplot(data = f, 
+      x = DELAY, 
+      y = LOAN_OUTSTANDINGLOANSCOUNT, 
+      geom = "violin")
+qplot(data = f, 
+      x = DELAY, 
+      y = LOAN_TERM, 
+      geom = "violin")
+qplot(data = f, 
+      x = DELAY, 
+      y = AGE, 
+      geom = "violin")
+qplot(data = f, 
+      x = DELAY, 
+      y = PERCENT_IN_THE_LOAN_AMOUNT, 
+      geom = "violin")
+```
+#Висновок: нетипові значеня змінної практично не залежать від наявності прострочення кредиту.
+
+# Statistics
+## Descriptive statistics
+```{r}
+library (psych)
+describe(f)
+```
+
+
+## Correlations
+```{r}
+library(dplyr)
+library(psych)
+data_s1 <- select(f, LOAN_PRODUCT_TYPE, LOAN_AMOUNT,	BRANCH_REGION, CLIENT_GENDER,	CLIENT_FAMILYSTATUS,  CLIENT_COUNTDEPENDENTS,	CLIENT_TOTALEXPERIENCE,	CLIENT_LASTEXPERIENCE,	CLIENT_EDUCATION,	CLIENT_ACTIVITYTYPE,  DELAY)
+pairs.panels(data_s1, lm=TRUE, # linear fit 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB"
+             )
+data_s2 <- select(f, CLIENT_TOGETHER_INCOME,	LOAN_OUTSTANDINGLOANSCOUNT,	LOAN_EXISTINGCUSTOMERFLAG,	LOAN_OVERDUE_EXIST_FLAG,	SCR_WORKPLACECONFIRMED, EMPLOYMENTTYPE,	DECADE,	LOAN_TERM,	ZODIAC,	ZODIAC_CHINA, DELAY)
+pairs.panels(data_s2, lm=TRUE, # linear fit 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB"
+             )
+data_s3 <- select(f, AGE,	CHANGE_WORK,	MATCH_OF_THE_REGISTRATION_PLACE_WITH_THE_ACTUAL_RESIDENCE,	FAMILY_PHONE,	REAL_ESTATE,	CAR,	INFORMATION_IN_MGB,	INFORMATION_IN_BKI,	STRABIS,	PERCENT_IN_THE_LOAN_AMOUNT,	DELAY)
+pairs.panels(data_s3, lm=TRUE, # linear fit 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB"
+             )
+
+```
+#Висновок: найбільше на DELAY впливає змінна LOAN_EXISTINGCUSTOMERFLAG.
+## Remove the ejections (not recommended strategy)
+```{r}
+f_ej1 <- f[f$LOAN_AMOUNT < mean(f$LOAN_AMOUNT)+sd(f$LOAN_AMOUNT)*3, ]
+describe(f_ej1$LOAN_AMOUNT)
+
+f_ej2 <- f[f$CLIENT_COUNTDEPENDENTS < mean(f$CLIENT_COUNTDEPENDENTS)+sd(f$CLIENT_COUNTDEPENDENTS)*3, ]
+describe(f_ej1$CLIENT_COUNTDEPENDENTS)
+
+f_ej3 <- f[f$CLIENT_TOTALEXPERIENCE < mean(f$CLIENT_TOTALEXPERIENCE)+sd(f$CLIENT_TOTALEXPERIENCE)*3, ]
+describe(f_ej1$CLIENT_TOTALEXPERIENCE)
+
+f_ej4 <- f[f$CLIENT_LASTEXPERIENCE < mean(f$CLIENT_LASTEXPERIENCE)+sd(f$CLIENT_LASTEXPERIENCE)*3, ]
+describe(f_ej1$CLIENT_LASTEXPERIENCE)
+
+f_ej5 <- f[f$CLIENT_TOGETHER_INCOME < mean(f$CLIENT_TOGETHER_INCOME)+sd(f$CLIENT_TOGETHER_INCOME)*3, ]
+describe(f_ej1$CLIENT_TOGETHER_INCOME)
+
+f_ej6 <- f[f$LOAN_OUTSTANDINGLOANSCOUNT < mean(f$LOAN_OUTSTANDINGLOANSCOUNT)+sd(f$LOAN_OUTSTANDINGLOANSCOUNT)*3, ]
+describe(f_ej1$LOAN_OUTSTANDINGLOANSCOUNT)
+
+f_ej7 <- f[f$LOAN_TERM < mean(f$LOAN_TERM)+sd(f$LOAN_TERM)*3, ]
+describe(f_ej1$LOAN_TERM)
+
+f_ej8 <- f[f$AGE < mean(f$AGE)+sd(f$AGE)*3, ]
+describe(f_ej1$AGE)
+
+f_ej9 <- f[f$PERCENT_IN_THE_LOAN_AMOUNT < mean(f$PERCENT_IN_THE_LOAN_AMOUNT)+sd(f$PERCENT_IN_THE_LOAN_AMOUNT)*3, ]
+describe(f_ej1$PERCENT_IN_THE_LOAN_AMOUNT)
+```
+## Replace with max
+```{r}
+f_ej11 <- f
+f_ej11$LOAN_AMOUNT <- ifelse(f$LOAN_AMOUNT < mean(f$LOAN_AMOUNT)+sd(f$LOAN_AMOUNT)*3,f$LOAN_AMOUNT,mean(f$LOAN_AMOUNT)+sd(f$LOAN_AMOUNT)*3)
+#let's work with f_eg2
+f <- f_ej11
+
+f_ej12 <- f
+f_ej12$CLIENT_COUNTDEPENDENTS <- ifelse(f$CLIENT_COUNTDEPENDENTS < mean(f$CLIENT_COUNTDEPENDENTS)+sd(f$CLIENT_COUNTDEPENDENTS)*3,f$CLIENT_COUNTDEPENDENTS,mean(f$CLIENT_COUNTDEPENDENTS)+sd(f$CLIENT_COUNTDEPENDENTS)*3)
+f <- f_ej12
+
+f_ej13 <- f
+f_ej13$CLIENT_TOTALEXPERIENCE <- ifelse(f$CLIENT_TOTALEXPERIENCE < mean(f$CLIENT_TOTALEXPERIENCE)+sd(f$CLIENT_TOTALEXPERIENCE)*3,f$CLIENT_TOTALEXPERIENCE,mean(f$CLIENT_TOTALEXPERIENCE)+sd(f$CLIENT_TOTALEXPERIENCE)*3)
+f <- f_ej13
+
+f_ej14 <- f
+f_ej14$CLIENT_LASTEXPERIENCE <- ifelse(f$CLIENT_LASTEXPERIENCE < mean(f$CLIENT_LASTEXPERIENCE)+sd(f$CLIENT_LASTEXPERIENCE)*3,f$CLIENT_LASTEXPERIENCE,mean(f$CLIENT_LASTEXPERIENCE)+sd(f$CLIENT_LASTEXPERIENCE)*3)
+f <- f_ej14
+
+f_ej15 <- f
+f_ej15$CLIENT_TOGETHER_INCOME <- ifelse(f$CLIENT_TOGETHER_INCOME < mean(f$CLIENT_TOGETHER_INCOME)+sd(f$CLIENT_TOGETHER_INCOME)*3,f$CLIENT_TOGETHER_INCOME,mean(f$CLIENT_TOGETHER_INCOME)+sd(f$CLIENT_TOGETHER_INCOME)*3)
+f <- f_ej15
+
+f_ej16 <- f
+f_ej16$LOAN_OUTSTANDINGLOANSCOUNT <- ifelse(f$LOAN_OUTSTANDINGLOANSCOUNT < mean(f$LOAN_OUTSTANDINGLOANSCOUNT)+sd(f$LOAN_OUTSTANDINGLOANSCOUNT)*3,f$LOAN_OUTSTANDINGLOANSCOUNT,mean(f$LOAN_OUTSTANDINGLOANSCOUNT)+sd(f$LOAN_OUTSTANDINGLOANSCOUNT)*3)
+f <- f_ej16
+
+f_ej17 <- f
+f_ej17$LOAN_TERM <- ifelse(f$LOAN_TERM < mean(f$LOAN_TERM)+sd(f$LOAN_TERM)*3,f$LOAN_TERM,mean(f$LOAN_TERM)+sd(f$LOAN_TERM)*3)
+f <- f_ej17
+
+f_ej18 <- f
+f_ej18$AGE <- ifelse(f$AGE < mean(f$AGE)+sd(f$AGE)*3,f$AGE,mean(f$AGE)+sd(f$AGE)*3)
+f <- f_ej18
+
+f_ej19 <- f
+f_ej19$PERCENT_IN_THE_LOAN_AMOUNT <- ifelse(f$PERCENT_IN_THE_LOAN_AMOUNT < mean(f$PERCENT_IN_THE_LOAN_AMOUNT)+sd(f$PERCENT_IN_THE_LOAN_AMOUNT)*3,f$PERCENT_IN_THE_LOAN_AMOUNT,mean(f$PERCENT_IN_THE_LOAN_AMOUNT)+sd(f$PERCENT_IN_THE_LOAN_AMOUNT)*3)
+f <- f_ej19
+
+describe(f_ej12$PERCENT_IN_THE_LOAN_AMOUNT)
+```
+#Висновок: для корекції викидів обраний варіант заповнення граничними значеннями.
+
+```{r}
+library(ggplot2)
+par(mfrow = c(1, 2))
+hist(f$LOAN_AMOUNT, col = 'dark blue', main = 'LOAN_AMOUNT', xlab = 'Value')
+hist(f$CLIENT_COUNTDEPENDENTS, col = 'dark green', main = 'CLIENT_COUNTDEPENDENTS', xlab = 'Value')
+hist(f$CLIENT_TOTALEXPERIENCE, col = 'dark red', main = 'CLIENT_TOTALEXPERIENCE', xlab = 'Value')
+hist(f$CLIENT_LASTEXPERIENCE, col = 'yellow', main = 'CLIENT_LASTEXPERIENCE', xlab = 'Value')
+hist(f$CLIENT_TOGETHER_INCOME, col = 'brown', main = 'CLIENT_TOGETHER_INCOME', xlab = 'Value')
+hist(f$LOAN_OUTSTANDINGLOANSCOUNT, col = 'dark orange', main = 'LOAN_OUTSTANDINGLOANSCOUNT', xlab = 'Value')
+hist(f$LOAN_TERM, col = 'pink', main = 'LOAN_TERM', xlab = 'Value')
+hist(f$AGE, col = 'gray', main = 'AGE', xlab = 'Value')
+hist(f$PERCENT_IN_THE_LOAN_AMOUNT, col = 'dark green', main = 'PERCENT_IN_THE_LOAN_AMOUNT', xlab = 'Value')
+```
+# Splitting the dataset into the TRAIN set and TEST set
+```{r}
+set.seed(123)
+library(caTools)
+split = sample.split(f$DELAY, SplitRatio = 0.8)
+f_train = subset(f, split == TRUE)
+f_test = subset(f, split == FALSE)
+#Write prepared data to the file
+write.csv2(f_train, file = "DATASET_train.csv")
+write.csv2(f_test, file = "DATASET_test.csv")
+```
+#Висновок: датасет розподілений на навчальну та тестову вибірки. Результати збережені в окремих файлах.
