@@ -1,0 +1,112 @@
+---
+title: "DZ3"
+author: "Stepan"
+date: "13 10 2020"
+output: word_document
+---
+
+# Download the data
+```{r}
+#Download the files
+setwd('C:/Users/Stepan/Desktop/6 курс/Машинное обучение/DZ3')
+d_train <- read.csv2('DATASET_train.csv', header = TRUE, encoding = 'UNICOD')
+d_train <- d_train[,-1]
+
+d_test <- read.csv2('DATASET_test.csv', header = TRUE, encoding = 'UNICOD')
+d_test <- d_test[,-1]
+
+```
+
+# Decision Tree Regression
+## Fitting simple tree
+```{r}
+#install.packages('rpart')
+library(rpart)
+dt <- rpart(LOAN_AMOUNT ~ CLIENT_TOGETHER_INCOME, d_train, control = rpart.control(minsplit = 50))
+plot(dt)
+text(dt, pos = 1, cex = .75, col = 1, font = 1)
+```
+## Predicting
+```{r}
+p_dt <- predict(dt, d_test)
+
+train_mse_dt <- sum((d_train$LOAN_AMOUNT-predict(dt, d_train))^2) /length(d_train$LOAN_AMOUNT)
+test_mse_dt <- sum((d_test$LOAN_AMOUNT-p_dt)^2)/length(p_dt)
+
+train_mse_dt
+test_mse_dt
+```
+## Visualising
+```{r}
+library(ggplot2)
+x_grid <- seq(min(d_train$CLIENT_TOGETHER_INCOME), max(d_train$CLIENT_TOGETHER_INCOME), 0.01)
+ggplot() +
+  geom_point(aes(d_train$CLIENT_TOGETHER_INCOME, d_train$LOAN_AMOUNT),colour = 'red') +
+  geom_point(aes(d_test$CLIENT_TOGETHER_INCOME, d_test$LOAN_AMOUNT),colour = 'dark green') +
+  geom_line(aes(x_grid, predict(dt, data.frame(CLIENT_TOGETHER_INCOME = x_grid))),colour = 'blue') +
+  ggtitle('LOAN_AMOUNT vs CLIENT_TOGETHER_INCOME') +
+  xlab('CLIENT_TOGETHER_INCOME') +
+  ylab('LOAN_AMOUNT')
+```
+## Fitting full tree
+```{r}
+# install.packages('rpart')
+library(rpart)
+ft <- rpart(LOAN_AMOUNT ~ LOAN_PRODUCT_TYPE + BRANCH_REGION + CLIENT_GENDER + CLIENT_TOTALEXPERIENCE + CLIENT_EDUCATION + CLIENT_TOGETHER_INCOME + LOAN_EXISTINGCUSTOMERFLAG + LOAN_OVERDUE_EXIST_FLAG + SCR_WORKPLACECONFIRMED + AGE + MATCH_OF_THE_REGISTRATION_PLACE_WITH_THE_ACTUAL_RESIDENCE + FAMILY_PHONE + CAR + PERCENT_IN_THE_LOAN_AMOUNT + DELAY, d_train, control = rpart.control(minsplit = 2))
+plot(ft)
+text(ft, pos = 1, cex = .75, col = 1, font = 1)
+```
+
+## Predicting
+```{r}
+p_ft <- predict(ft, d_test)
+
+train_mse_ft <- sum((d_train$LOAN_AMOUNT-predict(dt, d_train))^2)/length(d_train$LOAN_AMOUNT)
+test_mse_ft <- sum((d_test$LOAN_AMOUNT-p_ft)^2)/length(p_ft)
+
+train_mse_ft
+test_mse_ft
+```
+
+# Random forest
+
+## Fitting
+```{r}
+# install.packages('randomForest')
+library(randomForest)
+set.seed(1234)
+rf = randomForest(x = d_train['CLIENT_TOGETHER_INCOME'],
+                         y = d_train$LOAN_AMOUNT,
+                         ntree = 5)
+```
+
+## Predicting
+```{r}
+p_rf <- predict(rf, d_test)
+
+train_mse_rf <- sum((d_train$LOAN_AMOUNT-predict(rf, d_train))^2)/length(d_train$LOAN_AMOUNT)
+test_mse_rf <- sum((d_test$LOAN_AMOUNT-p_rf)^2)/length(p_rf)
+
+train_mse_rf
+test_mse_rf
+```
+## Visualising
+```{r}
+ggplot() +
+  geom_point(aes(d_train$CLIENT_TOGETHER_INCOME, d_train$LOAN_AMOUNT),colour = 'red') +
+  geom_point(aes(d_test$CLIENT_TOGETHER_INCOME, d_test$LOAN_AMOUNT),colour = 'dark green') +
+  geom_line(aes(x_grid, predict(rf, data.frame(CLIENT_TOGETHER_INCOME = x_grid))),colour = 'blue') +
+  ggtitle('LOAN_AMOUNT vs CLIENT_TOGETHER_INCOME') +
+  xlab('CLIENT_TOGETHER_INCOME') +
+  ylab('LOAN_AMOUNT')
+```
+
+# Saving results
+```{r}
+fit <- read.csv2('LOAN_AMOUNT.csv', header = TRUE, encoding = 'UNICOD')
+fit$p_ft <- p_ft
+fit$p_rf <- p_rf
+head(fit)
+write.csv2(fit[-1], file = "DATASET_fit.csv")
+```
+

@@ -1,0 +1,176 @@
+---
+title: "DZ4"
+author: "Stepan"
+date: "13 10 2020"
+output: word_document
+---
+```{r}
+#Download the files
+setwd('C:/Users/Stepan/Desktop/6 курс/Машинное обучение/DZ4')
+d_train <- read.csv2('DATASET_train.csv', header = TRUE, encoding = 'UNICOD')
+d_train <- d_train[,-1]
+
+d_test <- read.csv2('DATASET_test.csv', header = TRUE, encoding = 'UNICOD')
+d_test <- d_test[,-1]
+
+```
+
+
+```{r}
+library (dplyr)
+d_train_nn <- select(d_train, LOAN_AMOUNT, 
+                                            CLIENT_COUNTDEPENDENTS, 
+                                            CLIENT_TOTALEXPERIENCE, 
+                                            CLIENT_LASTEXPERIENCE, 
+                                            CLIENT_TOGETHER_INCOME, 
+                                            LOAN_OUTSTANDINGLOANSCOUNT, 
+                                            LOAN_TERM, 
+                                            AGE, 
+                                            PERCENT_IN_THE_LOAN_AMOUNT)
+d_test_nn <- select(d_test, LOAN_AMOUNT, 
+                                            CLIENT_COUNTDEPENDENTS, 
+                                            CLIENT_TOTALEXPERIENCE, 
+                                            CLIENT_LASTEXPERIENCE, 
+                                            CLIENT_TOGETHER_INCOME, 
+                                            LOAN_OUTSTANDINGLOANSCOUNT, 
+                                            LOAN_TERM, 
+                                            AGE, 
+                                            PERCENT_IN_THE_LOAN_AMOUNT)
+d_train_sc <- as.data.frame(scale(d_train_nn))
+d_test_sc <- as.data.frame(scale(d_test_nn))
+head (d_train_sc)
+```
+
+```{r results='hide'}
+#install.packages('reshape')
+library(nnet)
+dd_ap <- nnet (LOAN_AMOUNT ~
+                                            CLIENT_COUNTDEPENDENTS+ 
+                                            CLIENT_TOTALEXPERIENCE+ 
+                                            CLIENT_LASTEXPERIENCE+ 
+                                            CLIENT_TOGETHER_INCOME+ 
+                                            LOAN_OUTSTANDINGLOANSCOUNT+ 
+                                            LOAN_TERM+ 
+                                            AGE+ 
+                                            PERCENT_IN_THE_LOAN_AMOUNT, d_train_sc, linout = TRUE ,size = 4, maxit = 10000)
+library(graphics)
+source(file = 'plot.nnet.R')
+plot.nnet(dd_ap)
+```
+
+
+## Prediction
+```{r}
+p_y_train <- predict(dd_ap, d_train_sc)
+p_y_test <- predict(dd_ap, d_test_sc)
+```
+
+
+## Invert the effect of the scale function
+```{r}
+#install.packages('DMwR')
+library(DMwR)
+sc_y_train <- scale(d_train_sc$LOAN_AMOUNT)
+d_train_nn <- DMwR::unscale(p_y_train, sc_y_train)
+sc_y_test <- scale(d_test_sc$LOAN_AMOUNT)
+d_test_nn <- DMwR::unscale(p_y_test, sc_y_test)
+```
+
+## MSE
+```{r}
+train_mse <- sum((d_train_sc$LOAN_AMOUNT-d_train_sc)^2)/length(d_train_sc$LOAN_AMOUNT)
+test_mse <- sum((d_test_sc$LOAN_AMOUNT-d_test_sc)^2)/length(d_test_sc$LOAN_AMOUNT)
+train_mse
+test_mse
+```
+
+```{r}
+library(ggplot2)
+ggplot() +
+  geom_point(aes(d_train_sc$CLIENT_TOGETHER_INCOME, d_train_sc$LOAN_AMOUNT),colour = 'red') +
+  geom_point(aes(d_test_sc$CLIENT_TOGETHER_INCOME, d_test_sc$LOAN_AMOUNT),colour = 'dark green') +
+  geom_point(aes(d_test_sc$CLIENT_TOGETHER_INCOME, d_test_nn),colour = 'blue', size = 3, alpha=0.5) +
+  ggtitle('LOAN_AMOUNT vs CLIENT_TOGETHER_INCOME') +
+  xlab('CLIENT_TOGETHER_INCOME') +
+  ylab('LOAN_AMOUNT')
+```
+
+
+
+
+
+# Fit NN-2 
+```{r  results='hide'}
+#install.packages('neuralnet')
+library(neuralnet)
+# fit neural network
+nn = neuralnet(LOAN_AMOUNT ~
+                                            CLIENT_COUNTDEPENDENTS+ 
+                                            CLIENT_TOTALEXPERIENCE+ 
+                                            CLIENT_TOGETHER_INCOME+ 
+                                            LOAN_OUTSTANDINGLOANSCOUNT+ 
+                                            LOAN_TERM, d_train_sc, hidden = 3, linear.output = T)
+# plot neural network
+plot(nn)
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+p_y_train_nn <- predict(nn, d_train_sc)
+p_y_test_nn <- predict(nn, d_test_sc)
+```
+## Invert the effect of the scale function
+```{r}
+y_train_nn <- DMwR::unscale(p_y_train_nn, sc_y_train)
+y_test_nn <- DMwR::unscale(p_y_test_nn, sc_y_test)
+```
+
+## MSE
+```{r}
+train_mse_nn <- sum((d_train_sc$LOAN_AMOUNT-y_train_nn)^2)/length(d_train_sc$LOAN_AMOUNT)
+test_mse_nn <- sum((d_test_sc$LOAN_AMOUNT-y_test_nn)^2)/length(d_test_sc$LOAN_AMOUNT)
+train_mse_nn
+test_mse_nn
+```
+## Visualising
+```{r}
+library(ggplot2)
+ggplot() +
+  geom_point(aes(d_train_sc$CLIENT_TOGETHER_INCOME, d_train_sc$LOAN_AMOUNT),colour = 'red') +
+  geom_point(aes(d_test_sc$CLIENT_TOGETHER_INCOME, d_test_sc$LOAN_AMOUNT),colour = 'dark green') +
+  geom_point(aes(d_test_sc$CLIENT_TOGETHER_INCOME, d_test_nn),colour = 'blue', size = 3, alpha=0.5) +
+  ggtitle('LOAN_AMOUNT vs CLIENT_TOGETHER_INCOME') +
+  xlab('CLIENT_TOGETHER_INCOME') +
+  ylab('LOAN_AMOUNT')
+```
+
+
+```{r}
+fit <- read.csv2('DATASET_fit.csv', header = TRUE, encoding = 'UNICOD')
+fit$nn <- y_test_nn
+head(fit)
+write.csv2(fit[-1], file = "DATASET_summmary.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

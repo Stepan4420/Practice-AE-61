@@ -1,0 +1,95 @@
+---
+title: "Summary"
+author: "Stepan"
+date: "13 10 2020"
+output: word_document
+---
+
+```{r}
+setwd('C:/Users/Stepan/Desktop/6 курс/Машинное обучение/DZ4')
+d1 <- read.csv2('DATASET_test.csv.', header = TRUE, encoding = 'UNICOD')
+#d1 <- read.csv2('')
+d2 <- read.csv2('DATASET_summmary.csv', header = TRUE, encoding = 'UNICOD')
+d2 <- d2[-1]
+d <- dplyr::bind_cols(d1, d2)
+d <- d[,-1]
+d$CLIENT_TOGETHER_INCOME <- as.factor(d$CLIENT_TOGETHER_INCOME)
+head(d)
+```
+
+
+
+```{r}
+#install.packages('gridExtra')
+library(gridExtra)
+library(ggplot2)
+g_sr <- ggplot(d, aes(x=LOAN_AMOUNT, y=p_sr)) + 
+  geom_abline(intercept=0, slope=1) +
+  geom_point(alpha=0.5) + labs(title="Linear Regression", x="Real ActualPower", y="Predicted ActualPower") + 
+  theme(plot.title=element_text(size=10), axis.title.x=element_text(size=7), axis.title.y=element_text(size=7), axis.text.x=element_text(size=5), axis.text.y=element_text(size=5)) + theme(legend.position="none")
+
+g_mr <- ggplot(d, aes(x=LOAN_AMOUNT, y=p_mr)) + 
+  geom_abline(intercept=0, slope=1) +
+  geom_point(alpha=0.5) + labs(title="Multiple Regression", x="Real ActualPower", y="Predicted ActualPower") + 
+  theme(plot.title=element_text(size=10), axis.title.x=element_text(size=7), axis.title.y=element_text(size=7), axis.text.x=element_text(size=5), axis.text.y=element_text(size=5)) + theme(legend.position="none")
+
+g_pr <- ggplot(d, aes(x=LOAN_AMOUNT, y=p_pr)) + 
+  geom_abline(intercept=0, slope=1) +
+  geom_point(alpha=0.5) + labs(title="Polynomial Regression", x="Real ActualPower", y="Predicted ActualPower") + 
+  theme(plot.title=element_text(size=10), axis.title.x=element_text(size=7), axis.title.y=element_text(size=7), axis.text.x=element_text(size=5), axis.text.y=element_text(size=5)) + theme(legend.position="none") 
+
+g_ft <- ggplot(d, aes(x=LOAN_AMOUNT, y=p_ft)) + 
+  geom_abline(intercept=0, slope=1) +
+  geom_point(alpha=0.5) + labs(title="Regression Tree", x="Real ActualPower", y="Predicted ActualPower") + 
+  theme(plot.title=element_text(size=10), axis.title.x=element_text(size=7), axis.title.y=element_text(size=7), axis.text.x=element_text(size=5), axis.text.y=element_text(size=5)) + theme(legend.position="none")
+
+g_rf <- ggplot(d, aes(x=LOAN_AMOUNT, y=p_rf)) + 
+  geom_abline(intercept=0, slope=1) +
+  geom_point(alpha=0.5) + labs(title="Random Forest", x="Real ActualPower", y="Predicted ActualPower") + 
+  theme(plot.title=element_text(size=10), axis.title.x=element_text(size=7), axis.title.y=element_text(size=7), axis.text.x=element_text(size=5), axis.text.y=element_text(size=5)) + theme(legend.position="none")
+
+g_nn <- ggplot(d, aes(x=LOAN_AMOUNT, y=nn)) + 
+  geom_abline(intercept=0, slope=1) +
+  geom_point(color = 'red', alpha=0.5) + labs(title="Neural Network", x="Real ActualPower", y="Predicted ActualPower") + 
+  theme(plot.title=element_text(size=10), axis.title.x=element_text(size=7), axis.title.y=element_text(size=7), axis.text.x=element_text(size=5), axis.text.y=element_text(size=5)) + theme(legend.position="none")
+
+gridExtra::grid.arrange(g_sr,g_mr,g_pr,g_ft,g_rf,g_nn,ncol=2)
+```
+
+
+
+
+#Calc prediction error and visualize it
+```{r}
+sr <- mean ((d$LOAN_AMOUNT - d$p_sr) ^ 2)
+mr <- mean ((d$LOAN_AMOUNT - d$p_mr) ^ 2)
+pr <- mean ((d$LOAN_AMOUNT - d$p_pr) ^ 2)
+ft <- mean ((d$LOAN_AMOUNT - d$p_ft) ^ 2)
+rf <- mean ((d$LOAN_AMOUNT - d$p_rf) ^ 2)
+nn <- mean ((d$LOAN_AMOUNT - d$nn) ^ 2)
+mse <- data.frame(sr,mr,pr,ft,rf,nn)
+head(mse)
+```
+
+```{r}
+#install.packages('reshape')
+library(reshape)
+mse1 <- reshape::melt.data.frame(mse)
+## Using as id variables
+head(mse1)
+```
+
+
+```{r}
+
+b1 <- ggplot(mse1, aes(x=variable, y=value)) +
+ geom_bar(stat="summary", fun.y="mean", fill = 'royalblue')
+b1
+```
+
+#Save results
+```{r}
+ggsave("plot.jpg", plot=b1 + theme_classic(), width=20, height=15,
+units="cm", dpi=600)
+```
+
